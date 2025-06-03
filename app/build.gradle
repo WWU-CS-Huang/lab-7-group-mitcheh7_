@@ -23,6 +23,7 @@ dependencies {
     implementation libs.guava
 
     implementation files('libs/heap.jar')
+    implementation files('libs/avl.jar')
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
