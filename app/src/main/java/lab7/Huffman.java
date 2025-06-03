@@ -3,11 +3,16 @@
  */
 package lab7;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Huffman {
-  public String getGreeting() {
-    return "Hello World!";
-  }
+  Map<Character, Integer> frequencyDict; // stores frequency of each char
 
   public static void main(String[] args) {
+  }
+
+  public void countFrequencies(String string) {
+
   }
 }
