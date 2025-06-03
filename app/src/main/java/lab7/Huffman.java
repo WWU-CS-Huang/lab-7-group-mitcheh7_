@@ -4,17 +4,24 @@
 package lab7;
 
 import heap.Heap;
+import avl.AVL;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Huffman {
-  Map<Character, Integer> frequencyDict; // stores frequency of each char
+  Map<Character, Node> frequencyDict; // stores frequency of each char
+  Heap<Node, Integer> frequencyHeap = new Heap();
+  Node huffmanTree;
+  Map<Character, String> chartoBitMap;
 
   public static void main(String[] args) {
     Huffman test = new Huffman();
-    test.countFrequencies("Hello this is jake");
-    Map<Character, Integer> frequencyDict = test.getFrequencyDict();
-
+    test.countFrequencies("lllbbbuuuuua");
+    Map<Character, Node> frequencyDict = test.getFrequencyDict();
+    Heap<Node, Integer> frequencyHeap = test.getFrequencyHeap();
+    test.BuildTree();
+    test.huffmanTree = frequencyHeap.poll();
+    System.out.println(test.encode("albu"));
   }
 
   public void countFrequencies(String string) {
@@ -24,16 +31,97 @@ public class Huffman {
     for (int i = 0; i < charArray.length; i++) { // go through all charachters
       if (frequencyDict.containsKey(charArray[i])) { // if dictionary contains charachter increment its frquency
         char currentChar = charArray[i];
-        int currentFrequency = frequencyDict.get(charArray[i]);
-        frequencyDict.replace(currentChar, currentFrequency + 1);
+        Node currentNode = frequencyDict.get(charArray[i]);
+        currentNode.priority = currentNode.priority + 1;
+        frequencyHeap.changePriority(currentNode, currentNode.priority);
       } else { // if not add it to dict
-        frequencyDict.put(charArray[i], 1);
+        Node node = new Node(charArray[i], 1);
+        frequencyDict.put(charArray[i], node);
+        frequencyHeap.add(node, 1);
       }
     }
   }
 
-  public Map<Character, Integer> getFrequencyDict() {
+  public void BuildTree() {
+    this.chartoBitMap = new HashMap<>();
+    while (frequencyHeap.size() > 1) {
+      Node rarest1 = frequencyHeap.poll();
+      rarest1.addLeft();
+      int rarest1Frequency = rarest1.priority;
+      Node rarest2 = frequencyHeap.poll();
+      rarest2.addRight();
+      int rarest2Frequency = rarest2.priority;
+      Node parent = new Node((rarest1Frequency + rarest2Frequency), rarest1, rarest2);
+      frequencyHeap.add(parent, parent.priority);
+    }
+    frequencyHeap.peek().updateMap(chartoBitMap);
+  }
+
+  public String encode(String string) {
+    char[] charArray = string.toCharArray();
+    String bitcode = new String();
+    for (char charachter : charArray) {
+      bitcode += chartoBitMap.get(charachter);
+    }
+    return bitcode;
+  }
+
+  public Heap<Node, Integer> getFrequencyHeap() {
+    return frequencyHeap;
+  }
+
+  // GETTER METHODS
+  public Map<Character, Node> getFrequencyDict() {
     return frequencyDict;
   }
 
+  public class Node {
+    public Character charachter;
+    public int priority;
+    public Node left;
+    public Node right;
+    public String bitcode;
+
+    public Node(char charachter, int priority) {
+      this.charachter = charachter;
+      this.priority = priority;
+      this.left = null;
+      this.right = null;
+      this.bitcode = "";
+    }
+
+    public Node(int priority, Node left, Node right) {
+      this.charachter = null;
+      this.priority = priority;
+      this.left = left;
+      this.right = right;
+    }
+
+    public void addLeft() {
+      if (left != null) {
+        left.addLeft();
+        right.addLeft();
+      } else {
+        this.bitcode = "0" + this.bitcode;
+      }
+    }
+
+    public void addRight() {
+      if (left != null) {
+        left.addRight();
+        right.addRight();
+      } else {
+        this.bitcode = "1" + this.bitcode;
+      }
+    }
+
+    public void updateMap(Map<Character, String> chartoBitMap) {
+      if (left != null) {
+        left.updateMap(chartoBitMap);
+        right.updateMap(chartoBitMap);
+      } else {
+        chartoBitMap.put(this.charachter, this.bitcode);
+      }
+    }
+  }
 }
