@@ -3,6 +3,7 @@
  */
 package lab7;
 
+import heap.Heap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,9 +11,29 @@ public class Huffman {
   Map<Character, Integer> frequencyDict; // stores frequency of each char
 
   public static void main(String[] args) {
+    Huffman test = new Huffman();
+    test.countFrequencies("Hello this is jake");
+    Map<Character, Integer> frequencyDict = test.getFrequencyDict();
+
   }
 
   public void countFrequencies(String string) {
-
+    string.toLowerCase();
+    frequencyDict = new HashMap<>(); // use frequecy dict.put(char, int)
+    char[] charArray = string.toCharArray();
+    for (int i = 0; i < charArray.length; i++) { // go through all charachters
+      if (frequencyDict.containsKey(charArray[i])) { // if dictionary contains charachter increment its frquency
+        char currentChar = charArray[i];
+        int currentFrequency = frequencyDict.get(charArray[i]);
+        frequencyDict.replace(currentChar, currentFrequency + 1);
+      } else { // if not add it to dict
+        frequencyDict.put(charArray[i], 1);
+      }
+    }
   }
+
+  public Map<Character, Integer> getFrequencyDict() {
+    return frequencyDict;
+  }
+
 }
