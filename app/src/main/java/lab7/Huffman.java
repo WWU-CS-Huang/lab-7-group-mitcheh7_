@@ -95,8 +95,7 @@ public class Huffman {
       rarest1.addCode('0');
       Node rarest2 = frequencyHeap.poll();// get nodes with lowest frequencies
       rarest2.addCode('1');
-      Node parent = new Node((rarest1.priority + rarest2.priority), rarest1, rarest2); // combine nodes with lowest
-                                                                                       // frequencies
+      Node parent = new Node((rarest1.priority + rarest2.priority), rarest1, rarest2); // combine nodes with lowest frequencies
       frequencyHeap.add(parent, parent.priority); // add parent node to heap
     }
     frequencyHeap.peek().updateMap(chartoBitMap);
@@ -113,7 +112,7 @@ public class Huffman {
   }
 
   /* Alternative call for decode(string,Node) that assumes the passed node is huffmanTree
-   * See decode(string,node for spec) */
+   * See decode(string,node) for spec) */
   public String decode(String string) {
     return decode(string, huffmanTree);
   }
@@ -123,8 +122,7 @@ public class Huffman {
     /* Three cases:
      * 1: bitcode > 0 && character at node 'tree': add character and restart decoding with same bitcode from huffmanTree
      * 2: bitcode > 0 && no character: follow bitpath left or right (based on bitcode), return decode of the node left or right of 'tree'
-     * 3: bitcode.length <= 0, return the character stored at tree
-     * */
+     * 3: bitcode.length <= 0, return the character stored at tree */
     if (bitcode.length() > 0) {
       if (tree.character != null) {
         return tree.character + decode(bitcode, huffmanTree);
