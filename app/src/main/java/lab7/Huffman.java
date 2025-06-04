@@ -43,7 +43,7 @@ public class Huffman {
       huff.huffmanTree = frequencyHeap.poll();
       // encode and decode strings
       String encodedString = huff.encode(inputString);
-      String decodedString = huff.decode(inputString);
+      String decodedString = huff.decode(encodedString);
       // print output
       if (inputString.length() < 100) {
         System.out.println("Input string: " + inputString);
@@ -52,6 +52,7 @@ public class Huffman {
       }
       System.out.println("Decoded equals input: " + inputString.equals(decodedString));
       System.out.println("Compression ratio: " + (encodedString.length() / inputString.length() / 8.0));
+
     } catch (Exception e) { // catching Exception because two possible exceptions can arrise (ie no args or
                             // FileNotFoundException)
       System.out.println("Please specify valid filename via command line: " + e.getMessage());
@@ -101,8 +102,32 @@ public class Huffman {
     return bitcode;
   }
 
+  /* Alternative call for decode(string,Node) that assumes the passed node is huffmanTree
+   * See decode(string,node for spec) */
   public String decode(String string) {
-    return ""; // TODO
+    return decode(string, huffmanTree);
+  }
+  /* decodes the passed bitcode into a string from the passed tree
+   * Pre: bitcode is a valid code for huffmanTree at node tree */
+  public String decode(String bitcode, Node tree) {
+    /* Three cases:
+     * 1: bitcode > 0 && character at node 'tree': add character and restart decoding with same bitcode from huffmanTree
+     * 2: bitcode > 0 && no character: follow bitpath left or right (based on bitcode), return decode of the node left or right of 'tree'
+     * 3: bitcode.length <= 0, return the character stored at tree
+     * */
+    if (bitcode.length() > 0) {
+      if (tree.charachter != null) {
+        return tree.charachter + decode(bitcode, huffmanTree);
+      } else {
+        if (bitcode.charAt(0) == '0') {
+	  return decode(bitcode.substring(1), tree.left);
+	} else {
+	  return decode(bitcode.substring(1), tree.right);
+	}
+      }
+    } else {
+      return "" + tree.charachter;
+    }
   }
 
   // GETTER METHODS
