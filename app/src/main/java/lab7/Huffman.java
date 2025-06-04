@@ -7,21 +7,50 @@ import heap.Heap;
 import avl.AVL;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+import java.io.File;
 
 public class Huffman {
   Map<Character, Node> frequencyDict; // stores frequency of each char
-  Heap<Node, Integer> frequencyHeap = new Heap();
-  Node huffmanTree;
-  Map<Character, String> chartoBitMap;
+  Heap<Node, Integer> frequencyHeap = new Heap(); // heap where frequency of each char is its priority
+  Node huffmanTree; // root node of huffmanTree
+  Map<Character, String> chartoBitMap; // stores map from char to its bitmap reprentation
 
   public static void main(String[] args) {
-    Huffman test = new Huffman();
-    test.countFrequencies("lllbbbuuuuua");
-    Map<Character, Node> frequencyDict = test.getFrequencyDict();
-    Heap<Node, Integer> frequencyHeap = test.getFrequencyHeap();
-    test.BuildTree();
-    test.huffmanTree = frequencyHeap.poll();
-    System.out.println(test.encode("albu"));
+    try {
+      // read file
+      String filename = args[0];
+      File file = new File(filename);
+      Scanner sc = new Scanner(file);
+      String inputString = "";
+      while (sc.hasNextLine()) {
+        String line = sc.nextLine();
+        inputString += line;
+      }
+      sc.close();
+      // build huffmantree
+      Huffman huff = new Huffman();
+      huff.countFrequencies(inputString);
+      Map<Character, Node> frequencyDict = huff.getFrequencyDict();
+      Heap<Node, Integer> frequencyHeap = huff.getFrequencyHeap();
+      huff.BuildTree();
+      huff.huffmanTree = frequencyHeap.poll();
+      // encode and decode strings
+      String encodedString = huff.encode(inputString);
+      String decodedString = huff.decode(inputString);
+      // print output
+      if (inputString.length() < 100) {
+        System.out.println("Input string: " + inputString);
+        System.out.println("Encoded string: " + encodedString);
+        System.out.println("Decoded string: " + decodedString);
+      }
+      System.out.println("Decoded equals input: " + inputString.equals(decodedString));
+      System.out.println("Compression ratio: " + (encodedString.length() / inputString.length() / 8.0));
+    } catch (Exception e) { // catching Exception because two possible exceptions can arrise (ie no args or
+                            // FileNotFoundException)
+      System.out.println("Please specify valid filename via command line: " + e.getMessage());
+    }
   }
 
   public void countFrequencies(String string) {
@@ -43,21 +72,22 @@ public class Huffman {
   }
 
   public void BuildTree() {
-    this.chartoBitMap = new HashMap<>();
+    this.chartoBitMap = new HashMap<>(); // build map from char to its corresponding bitcode
     while (frequencyHeap.size() > 1) {
-      Node rarest1 = frequencyHeap.poll();
+      Node rarest1 = frequencyHeap.poll(); // get nodes with lowest frequencies
       rarest1.addLeft();
       int rarest1Frequency = rarest1.priority;
-      Node rarest2 = frequencyHeap.poll();
+      Node rarest2 = frequencyHeap.poll();// get nodes with lowest frequencies
       rarest2.addRight();
       int rarest2Frequency = rarest2.priority;
-      Node parent = new Node((rarest1Frequency + rarest2Frequency), rarest1, rarest2);
-      frequencyHeap.add(parent, parent.priority);
+      Node parent = new Node((rarest1Frequency + rarest2Frequency), rarest1, rarest2); // combine nodes with lowest
+                                                                                       // frequencies
+      frequencyHeap.add(parent, parent.priority); // add parent node to heap
     }
     frequencyHeap.peek().updateMap(chartoBitMap);
   }
 
-  public String encode(String string) {
+  public String encode(String string) { // uses map for char to its corresponding bitcode to build bitcode for string
     char[] charArray = string.toCharArray();
     String bitcode = new String();
     for (char charachter : charArray) {
@@ -66,8 +96,8 @@ public class Huffman {
     return bitcode;
   }
 
-  public Heap<Node, Integer> getFrequencyHeap() {
-    return frequencyHeap;
+  public String decode(String string) {
+    return ""; // TODO
   }
 
   // GETTER METHODS
@@ -75,14 +105,18 @@ public class Huffman {
     return frequencyDict;
   }
 
+  public Heap<Node, Integer> getFrequencyHeap() {
+    return frequencyHeap;
+  }
+
   public class Node {
     public Character charachter;
     public int priority;
     public Node left;
     public Node right;
-    public String bitcode;
+    public String bitcode; // given nodes bitcode representation of a string
 
-    public Node(char charachter, int priority) {
+    public Node(char charachter, int priority) { // constructor for node without children and empty bitcode
       this.charachter = charachter;
       this.priority = priority;
       this.left = null;
@@ -90,14 +124,14 @@ public class Huffman {
       this.bitcode = "";
     }
 
-    public Node(int priority, Node left, Node right) {
+    public Node(int priority, Node left, Node right) { // constructor for a parent node
       this.charachter = null;
       this.priority = priority;
       this.left = left;
       this.right = right;
     }
 
-    public void addLeft() {
+    public void addLeft() { // recursively construct bitcode
       if (left != null) {
         left.addLeft();
         right.addLeft();
@@ -106,7 +140,7 @@ public class Huffman {
       }
     }
 
-    public void addRight() {
+    public void addRight() { // recursively construct bitcode
       if (left != null) {
         left.addRight();
         right.addRight();
@@ -115,7 +149,7 @@ public class Huffman {
       }
     }
 
-    public void updateMap(Map<Character, String> chartoBitMap) {
+    public void updateMap(Map<Character, String> chartoBitMap) { // recursively update map
       if (left != null) {
         left.updateMap(chartoBitMap);
         right.updateMap(chartoBitMap);
