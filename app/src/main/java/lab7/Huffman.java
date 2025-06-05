@@ -1,22 +1,21 @@
 /* Authors: Bogdan Trigubov and Henry Mitchell
  * Date: June 4th, 2024
- * Program description: Program that builds huffmanTree coding  tree for file compression. */
+ * Program description: Program that builds huffmanTree coding tree for file compression. */
 
 package lab7;
 
 import heap.Heap;
-import avl.AVL;
 import java.util.HashMap;
 import java.util.Map;
-import java.io.FileNotFoundException;
 import java.util.Scanner;
+import java.io.FileNotFoundException;
 import java.io.File;
 
 public class Huffman {
-  public Map<Character, Node> frequencyDict; // stores frequency of each char 
-  public Heap<Node, Integer> frequencyHeap; // heap where frequency of each char is its priority
-  public Node huffmanTree; // root node of huffmanTree
-  public Map<Character, String> chartoBitMap; // stores map from char to its bitmap reprentation
+  private Map<Character, String> chartoBitMap; // stores map from char to its bitmap reprentation
+  private Map<Character, Node> frequencyDict; // stores frequency of each char 
+  private Heap<Node, Integer> frequencyHeap; // heap where frequency of each char is its priority
+  private Node huffmanTree; // root node of huffmanTree
 
   public static void main(String[] args) throws FileNotFoundException {
     // read file
@@ -29,12 +28,9 @@ public class Huffman {
       throw e;
     }
       
-    // build huffmantree
+    // build huffmanTree
     Huffman huff = new Huffman();
-    huff.countFrequencies(inputString);
-    Map<Character, Node> frequencyDict = huff.frequencyDict;
-    Heap<Node, Integer> frequencyHeap = huff.frequencyHeap;
-    huff.BuildTree();
+    huff.buildTree(inputString);
 
     // encode and decode strings
     String encodedString = huff.encode(inputString);
@@ -47,62 +43,73 @@ public class Huffman {
       System.out.println("Decoded string: " + decodedString);
     }
     System.out.println("Decoded equals input: " + inputString.equals(decodedString));
-    System.out.println("Compression ratio: " + (encodedString.length() / inputString.length() / 8.0));
+    System.out.println("Compression ratio: " + ((float)encodedString.length() / (float)inputString.length() / 8.0));
   }
 
+
+  /* returns a string representing the file at filename
+   * Pre: filename is a valid file at app/filename */
   private static String getInputString(String filename) throws FileNotFoundException {
     try {
       String inputString = "";
       File file = new File(filename);
       Scanner sc = new Scanner(file);
       while (sc.hasNextLine()) {
-        String line = sc.nextLine();
-        inputString += line;
+        inputString += sc.nextLine();
       }
       sc.close();
       return inputString;
     } catch (FileNotFoundException e) {
       throw e;
     }
-  
   }
 
-  public void countFrequencies(String string) {
-    string.toLowerCase();
-    frequencyHeap = new Heap<Node,Integer>();
-    frequencyDict = new HashMap<Character,Node>(); // use frequency dict.put(char, int)
+  /* initializes Huffman variables except for huffmanTree Node */
+  public Huffman () {
+    chartoBitMap  = new HashMap<Character,String>();// map from character to its corresponding bitcode
+    frequencyDict = new HashMap<Character,Node>();  // map from character to its corresponding node
+    frequencyHeap = new Heap<Node,Integer>();       // heap storing node/frequency pairs
+  }
+
+
+  /* Builds a huffman coding tree from inputString
+   * Pre: inputString != null
+   * Post: huffmanTree is the root node of a huffman coding tree for inputString */
+  public void buildTree(String inputString) {
+    countFrequencies(inputString); //populates frequencyHeap
+							 
+    while (frequencyHeap.size() > 1) {
+      Node rarest1 = frequencyHeap.poll(); // get nodes with lowest frequencies
+      Node rarest2 = frequencyHeap.poll(); // get nodes with lowest frequencies
+      Node parent = new Node(rarest1, rarest2); // combine nodes with lowest frequencies
+      frequencyHeap.add(parent, parent.priority); // add parent node to heap
+    }
+    huffmanTree = frequencyHeap.poll(); // last node in heap is the root of a huffman coding tree
+    huffmanTree.updateMap(chartoBitMap, ""); // add bitcodes to all leaf nodes
+  }
+
+  /* counts the frequency of each character in string, storing it in frequencyHeap
+   * Pre: string != null */
+  private void countFrequencies(String string) {
     char[] charArray = string.toCharArray();
 
     for (int i = 0; i < charArray.length; i++) { // go through all characters
-      if (frequencyDict.containsKey(charArray[i])) { // if dictionary contains character increment its frequency
-        char currentChar = charArray[i];
-        Node currentNode = frequencyDict.get(charArray[i]);
-        currentNode.priority = currentNode.priority + 1;
+      char c = charArray[i];
+      if (frequencyDict.containsKey(c)) { // if dictionary contains character increment its frequency
+        Node currentNode = frequencyDict.get(c);
+        currentNode.priority += 1;
         frequencyHeap.changePriority(currentNode, currentNode.priority);
-      } else { // if not add it to dict
-        Node node = new Node(charArray[i], 1);
-        frequencyDict.put(charArray[i], node);
+      } else { //else add it to dict
+        Node node = new Node(c, 1);
+        frequencyDict.put(c, node);
         frequencyHeap.add(node, 1);
       }
     }
   }
-
-  public void BuildTree() {
-    this.chartoBitMap = new HashMap<Character,String>(); // build map from char to its corresponding bitcode
-							 
-    while (frequencyHeap.size() > 1) {
-      Node rarest1 = frequencyHeap.poll(); // get nodes with lowest frequencies
-      rarest1.addCode('0');
-      Node rarest2 = frequencyHeap.poll();// get nodes with lowest frequencies
-      rarest2.addCode('1');
-      Node parent = new Node((rarest1.priority + rarest2.priority), rarest1, rarest2); // combine nodes with lowest frequencies
-      frequencyHeap.add(parent, parent.priority); // add parent node to heap
-    }
-    frequencyHeap.peek().updateMap(chartoBitMap);
-    huffmanTree = frequencyHeap.poll();
-  }
-
-  public String encode(String string) { // uses map for char to its corresponding bitcode to build bitcode for string
+  
+  /* uses map for char to its corresponding bitcode to build bitcode for string 
+   * Pre: string != null, tree is built */
+  public String encode(String string) {
     char[] charArray = string.toCharArray();
     String bitcode = new String();
     for (char character : charArray) {
@@ -113,27 +120,23 @@ public class Huffman {
 
   /* Alternative call for decode(string,Node) that assumes the passed node is huffmanTree
    * See decode(string,node) for spec) */
-  public String decode(String string) {
-    return decode(string, huffmanTree);
+  public String decode(String bitcode) {
+    return decode(bitcode, huffmanTree);
   }
   /* Decodes the passed bitcode into a string from the passed tree
    * Pre: bitcode is a valid code for huffmanTree at node tree */
-  public String decode(String bitcode, Node tree) {
-    /* Three cases:
-     * 1: bitcode > 0 && character at node 'tree': add character and restart decoding with same bitcode from huffmanTree
-     * 2: bitcode > 0 && no character: follow bitpath left or right (based on bitcode), return decode of the node left or right of 'tree'
-     * 3: bitcode.length <= 0, return the character stored at tree */
-    if (bitcode.length() > 0) {
-      if (tree.character != null) {
+  private String decode(String bitcode, Node tree) {
+    if (bitcode.length() > 0) { //if there is bitcode remaining
+      if (tree.character != null) { //if this is a leaf, add character and restart from root
         return tree.character + decode(bitcode, huffmanTree);
       } else {
-        if (bitcode.charAt(0) == '0') {
+        if (bitcode.charAt(0) == '0') { //else decode left or right based on current bit
 	  return decode(bitcode.substring(1), tree.left);
 	} else {
 	  return decode(bitcode.substring(1), tree.right);
 	}
       }
-    } else {
+    } else { //else return character at tree
       return tree.character + "";
     }
   }
@@ -143,36 +146,31 @@ public class Huffman {
     public int priority;
     public Node left;
     public Node right;
-    public String bitcode; // given nodes bitcode representation of a string
 
-    public Node(char character, int priority) { // constructor for a leaf node
+    /* constructor for a leaf node
+     * Pre: priority != null */
+    public Node(char character, int priority) {
       this.character = character;
       this.priority = priority;
       this.left = null;
       this.right = null;
-      this.bitcode = "";
     }
 
-    public Node(int priority, Node left, Node right) { // constructor for a parent node
+    /* constructor for a parent node
+     * Pre: left != null, right != null, childrens' priorities are set and correct */
+    public Node(Node left, Node right) {
       this.character = null;
-      this.priority = priority;
+      this.priority = left.priority + right.priority;
       this.left = left;
       this.right = right;
     }
 
-    public void addCode(char c) { // recursively construct bitcode
+    /* Recursively updates chartoBitMap for this node and any children it has 
+     * Pre: chartoBitMap != null, bitcode is the bitcode for this node */
+    public void updateMap(Map<Character, String> chartoBitMap, String bitcode) {
       if (left != null) {
-        left.addCode(c);
-        right.addCode(c);
-      } else {
-        bitcode = c + bitcode;
-      }
-    }
-
-    public void updateMap(Map<Character, String> chartoBitMap) { // recursively update map
-      if (left != null) {
-        left.updateMap(chartoBitMap);
-        right.updateMap(chartoBitMap);
+        left.updateMap(chartoBitMap, bitcode + '0');
+        right.updateMap(chartoBitMap, bitcode + '1');
       } else {
         chartoBitMap.put(character, bitcode);
       }
