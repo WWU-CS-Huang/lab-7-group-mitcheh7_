@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.io.FileNotFoundException;
 import java.io.File;
+import java.lang.StringBuilder;
 
 public class Huffman {
   private Map<Character, String> chartoBitMap; // stores map from char to its bitmap reprentation
@@ -51,14 +52,20 @@ public class Huffman {
    * Pre: filename is a valid file at app/filename */
   private static String getInputString(String filename) throws FileNotFoundException {
     try {
-      String inputString = "";
+      StringBuilder strb = new StringBuilder();
       File file = new File(filename);
       Scanner sc = new Scanner(file);
-      while (sc.hasNextLine()) {
-        inputString += sc.nextLine();
+
+      if (sc.hasNextLine()) {
+        strb.append(sc.nextLine());
       }
+      while (sc.hasNextLine()) {
+	strb.append("\n"); //adding "\n" is necessary since hasNextLine() means there was a "\n" before the next line
+        strb.append(sc.nextLine());
+      }
+      
       sc.close();
-      return inputString;
+      return strb.toString();
     } catch (FileNotFoundException e) {
       throw e;
     }
@@ -110,35 +117,41 @@ public class Huffman {
   /* uses map for char to its corresponding bitcode to build bitcode for string 
    * Pre: string != null, tree is built */
   public String encode(String string) {
+    StringBuilder strb = new StringBuilder();
     char[] charArray = string.toCharArray();
-    String bitcode = new String();
-    for (char character : charArray) {
-      bitcode += chartoBitMap.get(character);
+    int strLeng = string.length();
+
+    for (int i = 0; i < strLeng; i++) {
+      strb.append(chartoBitMap.get(charArray[i]));
     }
-    return bitcode;
+    return strb.toString();
   }
 
-  /* Alternative call for decode(string,Node) that assumes the passed node is huffmanTree
-   * See decode(string,node) for spec) */
-  public String decode(String bitcode) {
-    return decode(bitcode, huffmanTree);
-  }
   /* Decodes the passed bitcode into a string from the passed tree
    * Pre: bitcode is a valid code for huffmanTree at node tree */
-  private String decode(String bitcode, Node tree) {
-    if (bitcode.length() > 0) { //if there is bitcode remaining
+  private String decode(String bitcode) {
+    StringBuilder decoded = new StringBuilder();
+    Node tree = huffmanTree;
+    char[] bitArr = bitcode.toCharArray();
+    int length = bitArr.length;
+    int i = 0;
+
+    while (i < length) { //while there is bitcode after index i
       if (tree.character != null) { //if this is a leaf, add character and restart from root
-        return tree.character + decode(bitcode, huffmanTree);
+	decoded.append(tree.character);
+        tree = huffmanTree;
       } else {
-        if (bitcode.charAt(0) == '0') { //else decode left or right based on current bit
-	  return decode(bitcode.substring(1), tree.left);
+        if (bitArr[i] == '0') { //else advance i and decode left or right based on current bit
+	  i++;
+	  tree = tree.left;
 	} else {
-	  return decode(bitcode.substring(1), tree.right);
+	  i++;
+	  tree = tree.right;;
 	}
       }
-    } else { //else return character at tree
-      return tree.character + "";
     }
+    decoded.append(tree.character);
+    return decoded.toString();
   }
 
   public class Node {
