@@ -52,16 +52,16 @@ public class Huffman {
    * Pre: filename is a valid file at app/filename */
   private static String getInputString(String filename) throws FileNotFoundException {
     try {
-      StringBuilder strb = new StringBuilder();
       File file = new File(filename);
       Scanner sc = new Scanner(file);
+      StringBuilder strb = new StringBuilder();
 
       if (sc.hasNextLine()) {
         strb.append(sc.nextLine());
-      }
-      while (sc.hasNextLine()) {
-	strb.append("\n"); //adding "\n" is necessary since hasNextLine() means there was a "\n" before the next line
-        strb.append(sc.nextLine());
+        while (sc.hasNextLine()) {
+	  strb.append('\n'); //adding "\n" is necessary since hasNextLine() means there was a "\n" before the next line
+          strb.append(sc.nextLine());
+        }
       }
       
       sc.close();
@@ -100,13 +100,13 @@ public class Huffman {
   private void countFrequencies(String string) {
     char[] charArray = string.toCharArray();
 
-    for (int i = 0; i < charArray.length; i++) { // go through all characters
+    for (int i = 0; i < charArray.length; i++) { // for each character
       char c = charArray[i];
       if (frequencyDict.containsKey(c)) { // if dictionary contains character increment its frequency
         Node currentNode = frequencyDict.get(c);
         currentNode.priority += 1;
         frequencyHeap.changePriority(currentNode, currentNode.priority);
-      } else { //else add it to dict
+      } else { // otherwise add it to dict
         Node node = new Node(c, 1);
         frequencyDict.put(c, node);
         frequencyHeap.add(node, 1);
@@ -136,17 +136,17 @@ public class Huffman {
     int length = bitArr.length;
     int i = 0;
 
-    while (i < length) { //while there is bitcode after index i
-      if (tree.character != null) { //if this is a leaf, add character and restart from root
+    while (i < length) { // while there is bitcode after index i
+      if (tree.character != null) { // if this is a leaf, add character and restart from root
 	decoded.append(tree.character);
         tree = huffmanTree;
-      } else {
-        if (bitArr[i] == '0') { //else advance i and decode left or right based on current bit
+      } else { // else traverse birArr
+        if (bitArr[i] == '0') { // bitArr[i] is '0', advance i and go left
 	  i++;
 	  tree = tree.left;
-	} else {
+	} else { // otherwise bitArr[i] must be '1', advance i and go right
 	  i++;
-	  tree = tree.right;;
+	  tree = tree.right;
 	}
       }
     }
